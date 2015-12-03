@@ -75,24 +75,18 @@ window._nextSquare = function(position, n, used, queenPlaced) { //(i, j) is the 
     c++;
   }
 
-  //then additionally jump forward if any rows/cols/major/minors are used up
-  var foundSpot = false;
-  while (r < n && c < n && !foundSpot) {
-    while(used.rows[r] === true) {
-      r++;
-      c = 0;
-    }
+  //then additionally jump forward while cols/major/minors invalidate that square
     while(used.cols[c] === true || used.majors[c-r] === true || used.minors[c+r] === true){
       c++;
     }
 
-    if (c === n) {
-      r++;
-      c = 0;
-    } else {
-      foundSpot = true;
-    }
-  }
+  //  if (c === n) {
+  //    r++;
+  //    c = 0;
+  //  } else {
+  //    foundSpot = true;
+  //  }
+  //}
 
   if (r >= n || c >= n) {
     return null;
@@ -240,9 +234,13 @@ window.countNQueensSolutions = function(n) {
   //492ms
 
 //skipping additional test of num used rows/cols
-  //no longer timed
+  //-- (too short to show up in SpecR)
   //349ms
 
 //passed around board rows instead of board
-  //no longer timed
+  //--
   //84ms
+
+//quits out if ANY row is skipped without a queen
+  //--
+  //under 50ms
