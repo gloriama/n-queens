@@ -56,11 +56,30 @@ window.findNQueensSolution = function(n) {
 //takes a partially completed board (that may or may not end up being a valid board) AND a point to start potentially adding queens
 //returns either a solution, if it exists, OR undefined if none exists
 window.helper = function(board, startPosition){ //r, c is the point where we should start trying to add more queens
-  // error checking: should never occur if code is bug-free
-  if (startPosition === null || startPosition.length != 2){
-    console.log("startPosition Error");
+  //check num queens
+  var rows = board.rows();
+  var n = rows.length;
+  var numQueens = 0;
+  for (var i = 0; i < n; i++) {
+    for (var j = 0; j < n; j++) {
+      if (rows[i][j] === 1) {
+        numQueens++;
+      }
+    }
+  }
+  if(numQueens === n){
+    return board;
+  }
+  
+  //ending case: if board has n queens in it, it's a solution
+  if (startPosition === null) {
     return null;
   }
+
+  // error checking
+  // if (startPosition.length !== 2){
+  //   return null;
+  // }
 
   var newBoard = new Board(board.rows()); //create copy of board so we do not modify original board
   var n = newBoard.rows().length;
@@ -86,7 +105,7 @@ window.helper = function(board, startPosition){ //r, c is the point where we sho
   while (currPosition) {
     var r = currPosition[0];
     var c = currPosition[1];
-    console.log(r,c);
+    //console.log(r,c);
     newBoard.togglePiece(r,c); //try adding a queen at currPosition
 
     if (!newBoard.hasAnyQueensConflicts()) { //found valid position for queen
