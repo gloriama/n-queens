@@ -80,15 +80,30 @@ window._nextSquare = function(position, n, used) { //(i, j) is the current squar
     c++;
   }
 
-  //then additionally jump forward if any rows/cols are used up
-  while(used.rows[r] === true){
-    //console.log("r: " + r);
-    r++;
-    c = 0;
-  }
-  while(used.cols[c] === true){
-    //console.log("c: " + c);
-    c++;
+  //then additionally jump forward if any rows/cols/major/minors are used up
+  var foundSpot = false;
+  while (r < n && c < n && !foundSpot) {
+    while(used.rows[r] === true) {// || used.cols[c] === true || used.majors[c-r] === true || used.minors[c+r] === true){
+      //console.log("r: " + r);
+      r++;
+      c = 0;
+      //c++;
+      //if(c === n){
+      //  r++;
+      //  c = 0;
+      //}
+    }
+    while(used.cols[c] === true || used.majors[c-r] === true || used.minors[c+r] === true){
+      //console.log("c: " + c);
+      c++;
+    }
+
+    if (c === n) {
+      r++;
+      c = 0;
+    } else {
+      foundSpot = true;
+    }
   }
 
   if (r >= n || c >= n) {
@@ -105,7 +120,7 @@ window.findNQueensSolution = function(n) {
   var board = new Board({ n: n });
 
   _solutionCount = 0;
-  var used = {rows: {}, cols: {}};
+  var used = {rows: {}, cols: {}, majors: {}, minors: {}};
   var solutionBoard = helper(board, [0, 0], 0, true, used);
   solutionBoard = solutionBoard || board;
   var solution = solutionBoard.rows(); //fixme
@@ -153,21 +168,18 @@ window.helper = function(board, startPosition, numQueens, findOne, used){
       used.cols[c] = true;
       changed.col = true;
     }
-    // if(used.rows[r] === undefined){
-    //   used.rows[r] = true;
-    //   changed.row = true;
-    // }
-    // if(used.rows[r] === undefined){
-    //   used.rows[r] = true;
-    //   changed.row = true;
-    // }
+    if(used.majors[c-r] === undefined){
+      used.majors[c-r] = true;
+      changed.major = true;
+    }
+    if(used.minors[c+r] === undefined){
+      used.minors[c+r] = true;
+      changed.minor = true;
+    }
 
-
-    if (!board.hasAnyQueenConflictsOn(r,c)) { //found valid position for queen
-      var potentialSolution = helper(board, _nextSquare(currPosition, n, used), numQueens, findOne, used);
-      if (findOne && potentialSolution) {
-        return potentialSolution;
-      }
+    var potentialSolution = helper(board, _nextSquare(currPosition, n, used), numQueens, findOne, used);
+    if (findOne && potentialSolution) {
+      return potentialSolution;
     }
 
     board.togglePiece(r,c); //remove the queen we just added
@@ -178,6 +190,12 @@ window.helper = function(board, startPosition, numQueens, findOne, used){
     }
     if (changed.col === true) {
       delete used.cols[c];  
+    }
+    if (changed.major === true) {
+      delete used.majors[c-r];
+    }
+    if (changed.minor === true) {
+      delete used.minors[c+r];  
     }
 
 
@@ -197,7 +215,7 @@ window.countNQueensSolutions = function(n) {
   var board = new Board({ n: n });
 
   _solutionCount = 0;
-  var used = {rows: {}, cols: {}};
+  var used = {rows: {}, cols: {}, majors: {}, minors: {}};
   helper(board, [0, 0], 0, false, used);
 
   var solutionCount = _solutionCount;
@@ -224,3 +242,7 @@ window.countNQueensSolutions = function(n) {
 //skipping used rows and cols
   //118ms
   //2323ms
+
+//skipping used rows, cols, majors, and minors
+  //43ms
+  //492ms
