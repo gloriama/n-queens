@@ -13,7 +13,9 @@
 
 // return a matrix (an array of arrays) representing a single nxn chessboard, with n rooks placed such that none of them can attack each other
 
-
+//------------------------------------------------------------------------------------------
+// N ROOKS
+//------------------------------------------------------------------------------------------
 
 window.findNRooksSolution = function(n) {
   var board = new Board({ n: n }); //fixme
@@ -41,11 +43,35 @@ window.countNRooksSolutions = function(n) {
   return solutionCount;
 };
 
+//------------------------------------------------------------------------------------------
+// N QUEENS
+//------------------------------------------------------------------------------------------
+
+//returns next square we should try to add a queen
+//OR null if we're at the end of the board
+//note: does not modify input
+window._nextSquare = function(position, n) { //(i, j) is the current square we're at
+  if (!position) {
+    return null;
+  }
+  var i = position[0];
+  var j = position[1];
+  if(i === n-1 && j === n-1){
+    return null;
+  }
+  if(j === n-1){
+    return [i+1, 0];
+  } 
+  return [i, j + 1];
+};
+
+window._solutionCount = 0;
 // return a matrix (an array of arrays) representing a single nxn chessboard, with n queens placed such that none of them can attack each other
 window.findNQueensSolution = function(n) {
   var board = new Board({ n: n });
 
-  var solutionBoard = window.helper(board, [0, 0]);
+  _solutionCount = 0;  
+  var solutionBoard = helper(board, [0, 0], 0, true);
   solutionBoard = solutionBoard || board;
   var solution = solutionBoard.rows(); //fixme
 
@@ -53,171 +79,69 @@ window.findNQueensSolution = function(n) {
   return solution;
 };
 
-//takes a partially completed board (that may or may not end up being a valid board) AND a point to start potentially adding queens
-//returns either a solution, if it exists, OR undefined if none exists
-window.helper = function(board, startPosition){ //r, c is the point where we should start trying to add more queens
-  //check num queens
+//input:
+  //board: a partially completed board (that may or may not end up being a valid board)
+  //startPosition: an array [r,c] that denotes the position to start attempting to add queens
+  //numQueens: the number of queens ALREADY in the board
+  //findOne: boolean to denote whether to stop after finding only one solution
+//output:
+  //one solution board, if it exists, OR null if none exists
+window.helper = function(board, startPosition, numQueens, findOne){
   var rows = board.rows();
   var n = rows.length;
-  var numQueens = 0;
-  for (var i = 0; i < n; i++) {
-    for (var j = 0; j < n; j++) {
-      if (rows[i][j] === 1) {
-        numQueens++;
-      }
-    }
-  }
+
+  //successful ending case: if board has n queens in it
   if(numQueens === n){
+    _solutionCount++;
     return board;
   }
   
-  //ending case: if board has n queens in it, it's a solution
+  //failed ending case: if we have no more positions allowed to add queens
   if (startPosition === null) {
     return null;
   }
-
-  // error checking
-  // if (startPosition.length !== 2){
-  //   return null;
-  // }
-
-  var newBoard = new Board(board.rows()); //create copy of board so we do not modify original board
-  var n = newBoard.rows().length;
-
-  //returns next square we should try to add a queen
-  //OR null if we're at the end of the board
-  var nextSquare = function(position) { //(i, j) is the current square we're at
-    if (!position) {
-      return null;
-    }
-    var i = position[0];
-    var j = position[1];
-    if(i === n-1 && j === n-1){
-      return null;
-    }
-    if(j === n-1){
-      return [i+1, 0];
-    } 
-    return [i, j + 1];
-  };
-
-  var currPosition = startPosition.slice();
-  while (currPosition) {
+  var currPosition = startPosition.slice(); //create copy of startPosition to prevent mutating input
+  
+  while (currPosition !== null) {
     var r = currPosition[0];
     var c = currPosition[1];
-    //console.log(r,c);
-    newBoard.togglePiece(r,c); //try adding a queen at currPosition
+    
+    board.togglePiece(r,c); //try adding a queen at currPosition
 
-    if (!newBoard.hasAnyQueensConflicts()) { //found valid position for queen
-      var potentialSolution = helper(newBoard, nextSquare(currPosition));
-      if (potentialSolution) {
+    if (!board.hasAnyQueenConflictsOn(r,c)) { //found valid position for queen
+      var potentialSolution = helper(board, window._nextSquare(currPosition, n), numQueens+1, findOne);
+      if (findOne && potentialSolution) {
         return potentialSolution;
       }
     }
 
-    newBoard.togglePiece(r,c); //remove the queen we just added
-    currPosition = nextSquare(currPosition); //increment position
+    board.togglePiece(r,c); //remove the queen we just added
+    currPosition = window._nextSquare(currPosition, n); //increment position
   }  
 
   return null; //no possible solution
 }
 
-
-
-//------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-
-window.ianSolutionCount = 0;
-
 // return the number of nxn chessboards that exist, with n queens placed such that none of them can attack each other
 window.countNQueensSolutions = function(n) {
-  // var solution = undefined; //fixme
-
-  // if (n === 0) {
-  //   return 1;
-  // }
-
   var board = new Board({ n: n });
 
-  window.ianSolutionCount = 0;
+  _solutionCount = 0;
+  helper(board, [0, 0], 0, false);
 
-  window.helper2(board, [0, 0]);
-  
-  var solutionCount = window.ianSolutionCount;
+  var solutionCount = _solutionCount;
   console.log('Number of solutions for ' + n + ' queens:', solutionCount);
   return solutionCount;
 };
 
+//brute force using hasAnyQueensConflicts
+  //1145 ms
+  //69472
 
-var helper2 = function(board, startPosition){ //r, c is the point where we should start trying to add more queens
-  //check num queens
-  var rows = board.rows();
-  var n = rows.length;
-  var numQueens = 0;
-  for (var i = 0; i < n; i++) {
-    for (var j = 0; j < n; j++) {
-      if (rows[i][j] === 1) {
-        numQueens++;
-      }
-    }
-  }
-  if(numQueens === n){
-    window.ianSolutionCount++; //!!! maybe increment solutionCount instead?
-    return;
-  }
-  
-  //ending case: if board has n queens in it, it's a solution
-  if (startPosition === null) {
-    return null; //???? continue somehow?
-  }
+//brute force using hasAnyQueenConflictsOn(r,c)
+  //419ms
+  //16133ms
 
-  // error checking
-  // if (startPosition.length !== 2){
-  //   return null;
-  // }
-
-  var newBoard = new Board(board.rows()); //create copy of board so we do not modify original board
-  var n = newBoard.rows().length;
-
-  //returns next square we should try to add a queen
-  //OR null if we're at the end of the board
-  var nextSquare = function(position) { //(i, j) is the current square we're at
-    if (!position) {
-      return null;
-    }
-    var i = position[0];
-    var j = position[1];
-    if(i === n-1 && j === n-1){
-      return null;
-    }
-    if(j === n-1){
-      return [i+1, 0];
-    } 
-    return [i, j + 1];
-  };
-
-  var currPosition = startPosition.slice();
-  while (currPosition) {
-    var r = currPosition[0];
-    var c = currPosition[1];
-    //console.log(r,c);
-    newBoard.togglePiece(r,c); //try adding a queen at currPosition
-
-    if (!newBoard.hasAnyQueensConflicts()) { //found valid position for queen
-      helper2(newBoard, nextSquare(currPosition));
-    //   if (potentialSolution) {
-    //     //SOLUTION IS FOUND
-    //     console.log("found");
-    //     window.ianSolutionCount++; //!!! can't actually access this var, but we'll fix that
-    //   }
-    }
-
-    newBoard.togglePiece(r,c); //remove the queen we just added
-    currPosition = nextSquare(currPosition); //increment position
-  }  
-
-  return null; //no possible solution
-}
+//brute force not using new Board (since that doesn't deep copy the rows anyway)
+  //201ms
+  //8010ms
