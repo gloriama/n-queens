@@ -16,27 +16,92 @@
 
 
 window.findNRooksSolution = function(n) {
-  var solution = undefined; //fixme
-
+  var board = new Board({ n: n }); //fixme
+  for (var i = 0; i < n; i++) {
+    board.togglePiece(i, i);
+  }
+  var solution = board.rows();
   console.log('Single solution for ' + n + ' rooks:', JSON.stringify(solution));
   return solution;
 };
 
 // return the number of nxn chessboards that exist, with n rooks placed such that none of them can attack each other
 window.countNRooksSolutions = function(n) {
-  var solution = undefined; //fixme
+  //var solution = undefined; //fixme
 
+  var factorial = function(n) {
+    if (n === 0) {
+      return 1;
+    }
+    return n * factorial(n-1);
+  }
+
+  var solutionCount = factorial(n);
   console.log('Number of solutions for ' + n + ' rooks:', solutionCount);
   return solutionCount;
 };
 
 // return a matrix (an array of arrays) representing a single nxn chessboard, with n queens placed such that none of them can attack each other
 window.findNQueensSolution = function(n) {
-  var solution = undefined; //fixme
+  var board = new Board({ n: n });
+
+  var solutionBoard = window.helper(board, [0, 0]);
+  solutionBoard = solutionBoard || board;
+  var solution = solutionBoard.rows(); //fixme
 
   console.log('Single solution for ' + n + ' queens:', JSON.stringify(solution));
   return solution;
 };
+
+//takes a partially completed board (that may or may not end up being a valid board) AND a point to start potentially adding queens
+//returns either a solution, if it exists, OR undefined if none exists
+window.helper = function(board, startPosition){ //r, c is the point where we should start trying to add more queens
+  // error checking: should never occur if code is bug-free
+  if (startPosition === null || startPosition.length != 2){
+    console.log("startPosition Error");
+    return null;
+  }
+
+  var newBoard = new Board(board.rows()); //create copy of board so we do not modify original board
+  var n = newBoard.rows().length;
+
+  //returns next square we should try to add a queen
+  //OR null if we're at the end of the board
+  var nextSquare = function(position) { //(i, j) is the current square we're at
+    if (!position) {
+      return null;
+    }
+    var i = position[0];
+    var j = position[1];
+    if(i === n-1 && j === n-1){
+      return null;
+    }
+    if(j === n-1){
+      return [i+1, 0];
+    } 
+    return [i, j + 1];
+  };
+
+  var currPosition = startPosition.slice();
+  while (currPosition) {
+    var r = currPosition[0];
+    var c = currPosition[1];
+    console.log(r,c);
+    newBoard.togglePiece(r,c); //try adding a queen at currPosition
+
+    if (!newBoard.hasAnyQueensConflicts()) { //found valid position for queen
+      var potentialSolution = helper(newBoard, nextSquare(currPosition));
+      if (potentialSolution) {
+        return potentialSolution;
+      }
+    }
+
+    newBoard.togglePiece(r,c); //remove the queen we just added
+    currPosition = nextSquare(currPosition); //increment position
+  }  
+
+  return null; //no possible solution
+}
 
 // return the number of nxn chessboards that exist, with n queens placed such that none of them can attack each other
 window.countNQueensSolutions = function(n) {
