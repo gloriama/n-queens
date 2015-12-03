@@ -50,19 +50,53 @@ window.countNRooksSolutions = function(n) {
 //returns next square we should try to add a queen
 //OR null if we're at the end of the board
 //note: does not modify input
-window._nextSquare = function(position, n) { //(i, j) is the current square we're at
+
+//
+window._nextSquare = function(position, n, used) { //(i, j) is the current square we're at
+  //ending cases:
   if (!position) {
+    //console.log("!postion");
     return null;
   }
-  var i = position[0];
-  var j = position[1];
-  if(i === n-1 && j === n-1){
+  if(Object.keys(used.rows).length >= n || Object.keys(used.cols).length >= n) {
+    //console.log("All rows or cols used");
     return null;
   }
-  if(j === n-1){
-    return [i+1, 0];
-  } 
-  return [i, j + 1];
+
+  var r = position[0];
+  var c = position[1];
+  
+  //another ending case:
+  if (r === n-1 && c === n-1) {
+   return null;
+  }  
+
+
+  //make sure we at least increment it one square
+  if(c === n-1){
+    r++;
+    c = 0;
+  } else {
+    c++;
+  }
+
+  //then additionally jump forward if any rows/cols are used up
+  while(used.rows[r] === true){
+    //console.log("r: " + r);
+    r++;
+    c = 0;
+  }
+  while(used.cols[c] === true){
+    //console.log("c: " + c);
+    c++;
+  }
+
+  if (r >= n || c >= n) {
+    return null;
+  }
+
+  //console.log(r,c);
+  return [r, c];
 };
 
 window._solutionCount = 0;
@@ -70,8 +104,9 @@ window._solutionCount = 0;
 window.findNQueensSolution = function(n) {
   var board = new Board({ n: n });
 
-  _solutionCount = 0;  
-  var solutionBoard = helper(board, [0, 0], 0, true);
+  _solutionCount = 0;
+  var used = {rows: {}, cols: {}};
+  var solutionBoard = helper(board, [0, 0], 0, true, used);
   solutionBoard = solutionBoard || board;
   var solution = solutionBoard.rows(); //fixme
 
@@ -86,7 +121,7 @@ window.findNQueensSolution = function(n) {
   //findOne: boolean to denote whether to stop after finding only one solution
 //output:
   //one solution board, if it exists, OR null if none exists
-window.helper = function(board, startPosition, numQueens, findOne){
+window.helper = function(board, startPosition, numQueens, findOne, used){
   var rows = board.rows();
   var n = rows.length;
 
@@ -107,16 +142,51 @@ window.helper = function(board, startPosition, numQueens, findOne){
     var c = currPosition[1];
     
     board.togglePiece(r,c); //try adding a queen at currPosition
+    numQueens++;
+
+    var changed = {row: false, col: false, major: false, minor: false};
+    if(used.rows[r] === undefined){
+      used.rows[r] = true;
+      changed.row = true;
+    }
+    if(used.cols[c] === undefined){
+      used.cols[c] = true;
+      changed.col = true;
+    }
+    // if(used.rows[r] === undefined){
+    //   used.rows[r] = true;
+    //   changed.row = true;
+    // }
+    // if(used.rows[r] === undefined){
+    //   used.rows[r] = true;
+    //   changed.row = true;
+    // }
+
 
     if (!board.hasAnyQueenConflictsOn(r,c)) { //found valid position for queen
-      var potentialSolution = helper(board, window._nextSquare(currPosition, n), numQueens+1, findOne);
+      var potentialSolution = helper(board, _nextSquare(currPosition, n, used), numQueens, findOne, used);
       if (findOne && potentialSolution) {
         return potentialSolution;
       }
     }
 
     board.togglePiece(r,c); //remove the queen we just added
-    currPosition = window._nextSquare(currPosition, n); //increment position
+    numQueens--;
+
+    if (changed.row === true) {
+      delete used.rows[r];
+    }
+    if (changed.col === true) {
+      delete used.cols[c];  
+    }
+
+
+    //ending case: if we have completed searching all possible locations where we can put a first queen (i.e. first row)
+    if(c === n-1 && numQueens === 0 && findOne === false){
+      return null;
+    }
+
+    currPosition = _nextSquare(currPosition, n, used); //increment position
   }  
 
   return null; //no possible solution
@@ -127,21 +197,30 @@ window.countNQueensSolutions = function(n) {
   var board = new Board({ n: n });
 
   _solutionCount = 0;
-  helper(board, [0, 0], 0, false);
+  var used = {rows: {}, cols: {}};
+  helper(board, [0, 0], 0, false, used);
 
   var solutionCount = _solutionCount;
   console.log('Number of solutions for ' + n + ' queens:', solutionCount);
   return solutionCount;
 };
 
-//brute force using hasAnyQueensConflicts
+//using hasAnyQueensConflicts
   //1145 ms
   //69472
 
-//brute force using hasAnyQueenConflictsOn(r,c)
+//using hasAnyQueenConflictsOn(r,c)
   //419ms
   //16133ms
 
-//brute force not using new Board (since that doesn't deep copy the rows anyway)
+//not creating new Boards (since that doesn't deep copy the rows anyway)
   //201ms
   //8010ms
+
+//first queen must be in first row, exit after that
+  //?
+  //~6 sec
+
+//skipping used rows and cols
+  //118ms
+  //2323ms
