@@ -122,10 +122,102 @@ window.helper = function(board, startPosition){ //r, c is the point where we sho
   return null; //no possible solution
 }
 
+
+
+//------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+
+window.ianSolutionCount = 0;
+
 // return the number of nxn chessboards that exist, with n queens placed such that none of them can attack each other
 window.countNQueensSolutions = function(n) {
-  var solution = undefined; //fixme
+  // var solution = undefined; //fixme
 
+  // if (n === 0) {
+  //   return 1;
+  // }
+
+  var board = new Board({ n: n });
+
+  window.ianSolutionCount = 0;
+
+  window.helper2(board, [0, 0]);
+  
+  var solutionCount = window.ianSolutionCount;
   console.log('Number of solutions for ' + n + ' queens:', solutionCount);
   return solutionCount;
 };
+
+
+var helper2 = function(board, startPosition){ //r, c is the point where we should start trying to add more queens
+  //check num queens
+  var rows = board.rows();
+  var n = rows.length;
+  var numQueens = 0;
+  for (var i = 0; i < n; i++) {
+    for (var j = 0; j < n; j++) {
+      if (rows[i][j] === 1) {
+        numQueens++;
+      }
+    }
+  }
+  if(numQueens === n){
+    window.ianSolutionCount++; //!!! maybe increment solutionCount instead?
+    return;
+  }
+  
+  //ending case: if board has n queens in it, it's a solution
+  if (startPosition === null) {
+    return null; //???? continue somehow?
+  }
+
+  // error checking
+  // if (startPosition.length !== 2){
+  //   return null;
+  // }
+
+  var newBoard = new Board(board.rows()); //create copy of board so we do not modify original board
+  var n = newBoard.rows().length;
+
+  //returns next square we should try to add a queen
+  //OR null if we're at the end of the board
+  var nextSquare = function(position) { //(i, j) is the current square we're at
+    if (!position) {
+      return null;
+    }
+    var i = position[0];
+    var j = position[1];
+    if(i === n-1 && j === n-1){
+      return null;
+    }
+    if(j === n-1){
+      return [i+1, 0];
+    } 
+    return [i, j + 1];
+  };
+
+  var currPosition = startPosition.slice();
+  while (currPosition) {
+    var r = currPosition[0];
+    var c = currPosition[1];
+    //console.log(r,c);
+    newBoard.togglePiece(r,c); //try adding a queen at currPosition
+
+    if (!newBoard.hasAnyQueensConflicts()) { //found valid position for queen
+      helper2(newBoard, nextSquare(currPosition));
+    //   if (potentialSolution) {
+    //     //SOLUTION IS FOUND
+    //     console.log("found");
+    //     window.ianSolutionCount++; //!!! can't actually access this var, but we'll fix that
+    //   }
+    }
+
+    newBoard.togglePiece(r,c); //remove the queen we just added
+    currPosition = nextSquare(currPosition); //increment position
+  }  
+
+  return null; //no possible solution
+}
