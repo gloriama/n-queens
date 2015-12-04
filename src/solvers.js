@@ -76,17 +76,11 @@ window._nextSquare = function(position, n, used, queenPlaced) { //(i, j) is the 
   }
 
   //then additionally jump forward while cols/major/minors invalidate that square
-    while(used.cols[c] === true || used.majors[c-r] === true || used.minors[c+r] === true){
-      c++;
-    }
+  while(used.cols[c] === true || used.majors[c-r] === true || used.minors[c+r] === true){
+    c++;
+  }
 
-  //  if (c === n) {
-  //    r++;
-  //    c = 0;
-  //  } else {
-  //    foundSpot = true;
-  //  }
-  //}
+
 
   if (r >= n || c >= n) {
     return null;
@@ -138,9 +132,8 @@ window.helper = function(n, boardArray, startPosition, numQueens, findOne, used)
   while (currPosition !== null) {
     var r = currPosition[0];
     var c = currPosition[1];
-    
-    //board.togglePiece(r,c); //try adding a queen at currPosition
-    boardArray[r][c] = 1;
+     
+    boardArray[r][c] = 1; //try adding a queen at currPosition
     numQueens++;
 
     var changed = {row: false, col: false, major: false, minor: false};
@@ -166,9 +159,8 @@ window.helper = function(n, boardArray, startPosition, numQueens, findOne, used)
     if (findOne && potentialSolution) {
       return potentialSolution;
     }
-
-    //board.togglePiece(r,c); //remove the queen we just added
-    boardArray[r][c] = 0;
+ 
+    boardArray[r][c] = 0; //remove the queen we just added
     numQueens--;
 
     if (changed.row === true) {
@@ -185,9 +177,20 @@ window.helper = function(n, boardArray, startPosition, numQueens, findOne, used)
     }
 
 
-    //ending case: if we have completed searching all possible locations where we can put a first queen (i.e. first row)
-    if(c === n-1 && numQueens === 0 && findOne === false){
-      return null;
+    //ending case: if we have completed searching all possible locations where we can put a first queen (i.e. left half of row),
+      //double the number of solutions found after left half (NOT INCLUDING middle column for odd n), to utilize symmetry
+      //end searching for solutions after left half (INCLUDING middle column for odd n)
+    if(numQueens === 0 && findOne === false){
+      if (c === Math.floor(n/2)-1)
+      {
+        _solutionCount *= 2; //double solution count, regardless of even or odd n
+        if (n % 2 === 0) { //exit case for even n
+          return null;
+        }
+      }
+      if (c === Math.floor(n/2)) { //exit case for odd n
+        return null;
+      }
     }
 
     currPosition = _nextSquare(currPosition, n, used); //increment position
